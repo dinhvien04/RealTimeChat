@@ -1,0 +1,21 @@
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/chat-app
+# JWT_SECRET=your_secret_key_here4
+# GEMINI_API_KEY=AIzaSyCp-eqa8ko6F5GTiVs8P1fYWzz8ke0GlT0
+GEMINI_API_KEY=AIzaSyAE-F4eM1BLdNJgQDiMev4vPePWhRPDRW0
+# GEMINI_API_KEY=AIzaSyAUcYuG9w3QNtZNwXUcR2kiRhlAZ6LJGSc
+# DEEPSEEK_API_KEY=sk-730abf65fe0f465f8635725c825a7a56
+GCLOUD_PROJECT_NUMBER=249393018347
+GROK_API_KEY=xai-YET6yRBmdmrwpJVIiWJOes3YWCrTKJXbhXmSX7byMzwCChz1KhVzba0b51RzoifoFLDfJNVpdleMJAQf
+# EMAIL_USER=vien.computer.2004@gmail.com
+# EMAIL_PASS=vrnvvqiirvrrvtns
+# EMAIL_USER=nguyendinhvien2004@gmail.com
+# EMAIL_PASS=gauckkpgcjqeuzyx
+GMAIL_USER=vien.computer.2004@gmail.com
+GMAIL_APP_PASSWORD=eundjoiumacxtskz
+FRONTEND_URL=http://localhost:5000   # hoặc URL giao diện của bạn
+JWT_SECRET=7c4a8d09ca3762af61e59520943dc26494f8941b7c4a8d09ca3762af61e59520943dc26494f8941b
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=admin123
+

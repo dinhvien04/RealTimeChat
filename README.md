@@ -28,6 +28,32 @@ A modern real-time chat application built with Node.js, Express, Socket.IO, and 
 - **Delete (hide) your own messages**: You can delete (hide) any message you sent, and it will disappear from your chat view but remain visible to others.
 - **Voice message (Record and send voice messages):** Record directly in the browser, send the recording file to the server, everyone can listen to the voice message even when reloading the page or logging in from another device.
 
+### Admin Features
+
+- **Admin Dashboard** - Comprehensive admin panel at `/admin`
+- **User Management**:
+  - View all registered users
+  - Lock/unlock user accounts
+  - Delete users and their messages
+  - See user details (email, join date, online status)
+- **Message Management**:
+  - View all messages in the system
+  - Delete inappropriate messages
+  - Filter messages with bad word detection
+- **Bad Word Filter**:
+  - Add/remove forbidden words
+  - Auto-filter messages containing bad words
+  - Manage word blacklist
+- **Statistics Dashboard**:
+  - Total users and messages count
+  - Active users count
+  - Voice messages statistics
+  - Last 24 hours activity (new users, messages)
+- **Audit Log**:
+  - Track all admin actions
+  - View who performed what action and when
+  - Keep accountability of admin operations
+
 ## Prerequisites
 
 - Node.js (v14 or higher)
@@ -70,11 +96,24 @@ A modern real-time chat application built with Node.js, Express, Socket.IO, and 
 
 ## API Endpoints
 
+### User Endpoints
 - `POST /api/auth/register` - Register a new user
 - `POST /api/auth/login` - Login user
 - `GET /api/messages` - Get message history
 - `POST /api/messages` - Send a new message
 - `POST /api/upload` - Upload image/file (authenticated)
+
+### Admin Endpoints (requires admin role)
+- `GET /api/admin/users` - Get all users
+- `PUT /api/admin/users/:userId/toggle-status` - Lock/unlock user
+- `DELETE /api/admin/users/:userId` - Delete user
+- `GET /api/admin/messages` - Get all messages
+- `DELETE /api/admin/messages/:messageId` - Delete message
+- `GET /api/admin/statistics` - Get system statistics
+- `GET /api/admin/badwords` - Get bad words list
+- `POST /api/admin/badwords` - Add bad word
+- `DELETE /api/admin/badwords/:id` - Remove bad word
+- `GET /api/admin/audit-logs` - Get audit logs
 
 ## Socket.IO Events
 

@@ -197,4 +197,13 @@ function handleLogout() {
 }
 
 // Initialize auth on page load
-document.addEventListener('DOMContentLoaded', checkAuth); 
+document.addEventListener('DOMContentLoaded', () => {
+    // Pre-fill email if provided in query string
+    const params = new URLSearchParams(window.location.search);
+    const urlEmail = params.get('email');
+    if (urlEmail) {
+        const emailInput = document.getElementById('email');
+        if (emailInput) emailInput.value = urlEmail;
+    }
+    checkAuth();
+}); 

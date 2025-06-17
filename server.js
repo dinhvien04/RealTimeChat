@@ -1,9 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const path = require('path');
 const authRoutes = require('./routes/auth');
 const messageRoutes = require('./routes/messages');
@@ -12,9 +12,7 @@ const userRoutes = require('./routes/user');
 const adminRoutes = require('./routes/admin');
 const User = require('./models/User');
 const Message = require('./models/Message');
-
-// Load environment variables
-dotenv.config();
+const BadWord = require('./models/BadWord');
 
 const app = express();
 const server = http.createServer(app);
@@ -52,6 +50,17 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/chat-app'
 // Quản lý user online duy nhất
 const onlineUsers = new Set();
 const userSockets = {};
+
+// Function to filter forbidden words in real-time
+async function filterBadWords(text) {
+    const badwords = await BadWord.find();
+    let filtered = text;
+    badwords.forEach(bw => {
+        const regex = new RegExp(bw.word, 'gi');
+        filtered = filtered.replace(regex, '*'.repeat(bw.word.length));
+    });
+    return filtered;
+}
 
 // Socket.IO Connection
 io.on('connection', (socket) => {
@@ -110,6 +119,8 @@ io.on('connection', (socket) => {
                     edited: populatedMsg.edited,
                     timestamp: populatedMsg.createdAt
                 };
+                // Censor forbidden words before emitting
+                msgToSend.content = await filterBadWords(msgToSend.content);
                 socket.emit('message:new', msgToSend);
                 socket.broadcast.emit('message:new', msgToSend);
                 return;

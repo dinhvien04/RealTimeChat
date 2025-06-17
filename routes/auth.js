@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { sendOtpEmail } = require('../utils/mailer');
 const { auth } = require('../middleware/auth');
 
 // Register
@@ -121,6 +122,81 @@ router.get('/verify', auth, async (req, res) => {
             }
         });
     } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+/**
+ * @route POST /api/auth/forgot-password
+ * @desc Send password reset email
+ */
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ $or: [{ email }, { username: email }] });
+        if (user) {
+            // Generate numeric OTP code
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            user.resetPasswordToken = otp;
+            // OTP expires in 10 minutes
+            user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
+            await user.save();
+            // Send OTP email
+            await sendOtpEmail(user.email, otp);
+        }
+        // Always respond success to prevent email enumeration
+        res.json({ message: 'Nếu có tài khoản, bạn sẽ nhận được mã OTP qua email.' });
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+/**
+ * @route POST /api/auth/verify-otp
+ * @desc Verify OTP code before password reset
+ */
+router.post('/verify-otp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        const user = await User.findOne({
+            $or: [{ email }, { username: email }],
+            resetPasswordToken: otp,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+        if (!user) {
+            return res.status(400).json({ error: 'Mã OTP không hợp lệ hoặc đã hết hạn.' });
+        }
+        res.json({ message: 'OTP hợp lệ.' });
+    } catch (error) {
+        console.error('Verify OTP error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+/**
+ * @route POST /api/auth/reset-password
+ * @desc Reset password using token
+ */
+router.post('/reset-password', async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        // Find user by email/username and valid OTP
+        const user = await User.findOne({
+            $or: [{ email }, { username: email }],
+            resetPasswordToken: otp,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+        if (!user) {
+            return res.status(400).json({ error: 'Mã OTP không hợp lệ hoặc đã hết hạn.' });
+        }
+        user.password = newPassword;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save();
+        res.json({ message: 'Mật khẩu đã được đặt lại thành công.' });
+    } catch (error) {
+        console.error('Reset password error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
