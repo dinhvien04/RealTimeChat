@@ -72,6 +72,9 @@ A modern real-time chat application built with Node.js, Express, Socket.IO, and 
    PORT=5000
    MONGODB_URI=mongodb://localhost:27017/chat-app
    JWT_SECRET=your_jwt_secret_key_here
+   GMAIL_USER=youremail@gmail.com           # Your Gmail address used for sending OTP/reset emails
+   GMAIL_APP_PASSWORD=your_app_password_here # App Password from Google Account
+   FRONTEND_URL=http://localhost:5000        # Base URL for front-end pages (forgot-password, verify-otp, reset-password)
    ```
 4. Start the development server:
    ```bash
@@ -99,6 +102,9 @@ A modern real-time chat application built with Node.js, Express, Socket.IO, and 
 ### User Endpoints
 - `POST /api/auth/register` - Register a new user
 - `POST /api/auth/login` - Login user
+- `POST /api/auth/forgot-password` - Send OTP code to email for password reset
+- `POST /api/auth/verify-otp` - Verify OTP code before resetting password
+- `POST /api/auth/reset-password` - Reset password using OTP code
 - `GET /api/messages` - Get message history
 - `POST /api/messages` - Send a new message
 - `POST /api/upload` - Upload image/file (authenticated)
