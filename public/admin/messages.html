@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý tin nhắn</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #23272f;
+            color: #fff;
+            font-size: 1em;
+        }
+
+        .search-input:focus {
+            outline: 2px solid #ffb300;
+        }
+
+        .btn-delete {
+            background: #ff5252;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.9em;
+        }
+
+        .btn-delete:hover {
+            background: #ff1744;
+        }
+
+        .message-content {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 20px;
+            color: #aaa;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-layout">
+        <nav class="sidebar">
+            <h2><span class="material-icons">admin_panel_settings</span> Admin Panel</h2>
+            <div class="menu">
+                <a class="menu-btn" href="stats.html"><span class="material-icons">bar_chart</span>Thống kê</a>
+                <a class="menu-btn" href="users.html"><span class="material-icons">group</span>Quản lý người dùng</a>
+                <a class="menu-btn active" href="messages.html"><span class="material-icons">forum</span>Quản lý tin
+                    nhắn</a>
+                <a class="menu-btn" href="badwords.html"><span class="material-icons">block</span>Quản lý từ cấm</a>
+                <a class="menu-btn" href="auditlog.html"><span class="material-icons">history</span>Lịch sử hoạt
+                    động</a>
+            </div>
+            <button class="btn-logout" onclick="handleLogout()"><span class="material-icons">logout</span> Đăng
+                xuất</button>
+        </nav>
+        <main class="main-content">
+            <h1 class="section-title">Quản lý tin nhắn</h1>
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input"
+                    placeholder="Tìm kiếm tin nhắn hoặc người gửi...">
+            </div>
+            <div style="max-height:70vh;overflow-y:auto;background:#23272f;border-radius:12px;">
+                <table id="messageTable" style="margin-bottom:0;">
+                    <thead>
+                        <tr>
+                            <th>Người gửi</th>
+                            <th>Nội dung</th>
+                            <th>Thời gian</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="messageTableBody">
+                        <tr>
+                            <td colspan="4" class="empty-message">Đang tải...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script src="js/common.js"></script>
+    <script>
+        let allMessages = [];
+
+        async function fetchMessages() {
+            try {
+                const token = getCookie('authToken');
+                const response = await fetch('/api/admin/messages', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch messages');
+
+                allMessages = await response.json();
+                renderMessages(allMessages);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('messageTableBody').innerHTML =
+                    '<tr><td colspan="4" class="empty-message">Không thể tải tin nhắn</td></tr>';
+            }
+        }
+
+        function renderMessages(messages) {
+            const tbody = document.getElementById('messageTableBody');
+            if (messages.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-message">Không có tin nhắn nào</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = messages.map(msg => `
+                <tr>
+                    <td>${msg.sender.username}</td>
+                    <td class="message-content">${msg.content}</td>
+                    <td>${new Date(msg.createdAt).toLocaleString()}</td>
+                    <td>
+                        <button class="btn-delete" onclick="deleteMessage('${msg._id}')">
+                            <span class="material-icons">delete</span>
+                            Xóa
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function deleteMessage(messageId) {
+            if (!confirm('Bạn có chắc muốn xóa tin nhắn này?')) return;
+
+            try {
+                const token = getCookie('authToken');
+                const response = await fetch(`/api/admin/messages/${messageId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to delete message');
+
+                // Xóa tin nhắn khỏi danh sách và cập nhật giao diện
+                allMessages = allMessages.filter(msg => msg._id !== messageId);
+                renderMessages(allMessages);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Không thể xóa tin nhắn');
+            }
+        }
+
+        // Tìm kiếm tin nhắn
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredMessages = allMessages.filter(msg =>
+                msg.content.toLowerCase().includes(searchTerm) ||
+                msg.sender.username.toLowerCase().includes(searchTerm)
+            );
+            renderMessages(filteredMessages);
+        });
+
+        // Load tin nhắn khi trang được tải
+        fetchMessages();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý người dùng</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .btn-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .btn-toggle.active {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-toggle.inactive {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-toggle:hover {
+            opacity: 0.9;
+        }
+
+        .status-active {
+            color: #4caf50;
+        }
+
+        .status-inactive {
+            color: #f44336;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-layout">
+        <nav class="sidebar">
+            <h2><span class="material-icons">admin_panel_settings</span> Admin Panel</h2>
+            <div class="menu">
+                <a class="menu-btn" href="stats.html"><span class="material-icons">bar_chart</span>Thống kê</a>
+                <a class="menu-btn active" href="users.html"><span class="material-icons">group</span>Quản lý người
+                    dùng</a>
+                <a class="menu-btn" href="messages.html"><span class="material-icons">forum</span>Quản lý tin nhắn</a>
+                <a class="menu-btn" href="badwords.html"><span class="material-icons">block</span>Quản lý từ cấm</a>
+                <a class="menu-btn" href="auditlog.html"><span class="material-icons">history</span>Lịch sử hoạt
+                    động</a>
+            </div>
+            <button class="btn-logout" onclick="handleLogout()"><span class="material-icons">logout</span> Đăng
+                xuất</button>
+        </nav>
+        <main class="main-content">
+            <h1 class="section-title">Quản lý người dùng</h1>
+            <div style="max-height:70vh;overflow-y:auto;background:#23272f;border-radius:12px;">
+                <table id="userTable" style="margin-bottom:0;">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align:center; color:#aaa;">Đang tải...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script src="js/common.js"></script>
+    <script>
+        async function fetchUsers() {
+            try {
+                const token = getCookie('authToken');
+                const response = await fetch('/api/admin/users', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to fetch users');
+                const users = await response.json();
+                const tbody = document.getElementById('userTableBody');
+                tbody.innerHTML = '';
+                users.forEach(user => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${user.username}</td>
+                        <td>${user.email || ''}</td>
+                        <td>${user.role}</td>
+                        <td>
+                            <span class="${user.isActive ? 'status-active' : 'status-inactive'}">
+                                ${user.isActive ? 'Hoạt động' : 'Đã khóa'}
+                            </span>
+                        </td>
+                        <td>
+                            ${user.role !== 'admin' ? `
+                                <button 
+                                    class="btn-toggle ${user.isActive ? 'active' : 'inactive'}" 
+                                    onclick="toggleUserStatus('${user._id}', ${user.isActive})"
+                                >
+                                    <span class="material-icons">
+                                        ${user.isActive ? 'lock' : 'lock_open'}
+                                    </span>
+                                    ${user.isActive ? 'Khóa' : 'Mở khóa'}
+                                </button>
+                            ` : ''}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                const tbody = document.getElementById('userTableBody');
+                tbody.innerHTML = `<tr><td colspan='5' style='text-align:center;color:#f44336;'>${e.message}</td></tr>`;
+            }
+        }
+
+        async function toggleUserStatus(userId, currentStatus) {
+            try {
+                const token = getCookie('authToken');
+                const response = await fetch(`/api/admin/users/${userId}/toggle-status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ isActive: !currentStatus })
+                });
+
+                if (!response.ok) throw new Error('Failed to update user status');
+
+                // Refresh user list
+                fetchUsers();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Không thể cập nhật trạng thái người dùng');
+            }
+        }
+
+        // Load users when page loads
+        fetchUsers();
+    </script>
+</body>
+
+</html>

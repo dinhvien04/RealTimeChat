@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử hoạt động</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #23272f;
+            color: #fff;
+            font-size: 1em;
+        }
+
+        .search-input:focus {
+            outline: 2px solid #ffb300;
+        }
+
+        .filter-select {
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            background: #23272f;
+            color: #fff;
+            font-size: 1em;
+        }
+
+        .empty-log {
+            text-align: center;
+            color: #aaa;
+            padding: 20px;
+        }
+
+        .log-action {
+            font-weight: 500;
+            color: #ffb300;
+        }
+
+        .log-detail {
+            color: #eee;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-layout">
+        <nav class="sidebar">
+            <h2><span class="material-icons">admin_panel_settings</span> Admin Panel</h2>
+            <div class="menu">
+                <a class="menu-btn" href="stats.html"><span class="material-icons">bar_chart</span>Thống kê</a>
+                <a class="menu-btn" href="users.html"><span class="material-icons">group</span>Quản lý người dùng</a>
+                <a class="menu-btn" href="messages.html"><span class="material-icons">forum</span>Quản lý tin nhắn</a>
+                <a class="menu-btn" href="badwords.html"><span class="material-icons">block</span>Quản lý từ cấm</a>
+                <a class="menu-btn active" href="auditlog.html"><span class="material-icons">history</span>Lịch sử hoạt
+                    động</a>
+            </div>
+            <button class="btn-logout" onclick="handleLogout()"><span class="material-icons">logout</span> Đăng
+                xuất</button>
+        </nav>
+        <main class="main-content">
+            <h1 class="section-title">Lịch sử hoạt động</h1>
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input"
+                    placeholder="Tìm kiếm theo người thực hiện, hành động, chi tiết...">
+                <select id="actionFilter" class="filter-select">
+                    <option value="">Tất cả hành động</option>
+                    <option value="delete_user">Xóa user</option>
+                    <option value="lock_user">Khóa user</option>
+                    <option value="unlock_user">Mở khóa user</option>
+                    <option value="delete_message">Xóa tin nhắn</option>
+                    <option value="add_badword">Thêm từ cấm</option>
+                    <option value="delete_badword">Xóa từ cấm</option>
+                </select>
+            </div>
+            <div style="max-height:60vh;overflow-y:auto;background:#23272f;border-radius:12px;">
+                <table style="width:100%;margin-bottom:0;">
+                    <thead>
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>Người thực hiện</th>
+                            <th>Hành động</th>
+                            <th>Chi tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody">
+                        <tr>
+                            <td colspan="4" class="empty-log">Đang tải...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script src="js/common.js"></script>
+    <script>
+        let allLogs = [];
+        async function fetchLogs() {
+            try {
+                const token = getCookie('authToken');
+                const res = await fetch('/api/admin/audit-logs', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Không thể lấy log');
+                allLogs = await res.json();
+                renderLogs(allLogs);
+            } catch (e) {
+                document.getElementById('logTableBody').innerHTML = `<tr><td colspan='4' class='empty-log'>${e.message}</td></tr>`;
+            }
+        }
+        function renderLogs(logs) {
+            const tbody = document.getElementById('logTableBody');
+            if (!logs.length) {
+                tbody.innerHTML = `<tr><td colspan='4' class='empty-log'>Không có log nào</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = logs.map(log => `
+                <tr>
+                    <td>${new Date(log.createdAt).toLocaleString()}</td>
+                    <td>${log.user?.username || 'Unknown'}</td>
+                    <td class="log-action">${actionLabel(log.action)}</td>
+                    <td class="log-detail">${log.detail || ''}</td>
+                </tr>
+            `).join('');
+        }
+        function actionLabel(action) {
+            switch (action) {
+                case 'delete_user': return 'Xóa user';
+                case 'lock_user': return 'Khóa user';
+                case 'unlock_user': return 'Mở khóa user';
+                case 'delete_message': return 'Xóa tin nhắn';
+                case 'add_badword': return 'Thêm từ cấm';
+                case 'delete_badword': return 'Xóa từ cấm';
+                default: return action;
+            }
+        }
+        document.getElementById('searchInput').addEventListener('input', filterLogs);
+        document.getElementById('actionFilter').addEventListener('change', filterLogs);
+        function filterLogs() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const action = document.getElementById('actionFilter').value;
+            const filtered = allLogs.filter(log =>
+                (!action || log.action === action) &&
+                (
+                    (log.user?.username || '').toLowerCase().includes(search) ||
+                    (log.detail || '').toLowerCase().includes(search) ||
+                    actionLabel(log.action).toLowerCase().includes(search)
+                )
+            );
+            renderLogs(filtered);
+        }
+        fetchLogs();
+    </script>
+</body>
+
+</html>

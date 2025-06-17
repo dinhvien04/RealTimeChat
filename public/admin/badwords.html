@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý từ cấm</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .badword-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .badword-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #23272f;
+            color: #fff;
+            font-size: 1em;
+        }
+
+        .badword-input:focus {
+            outline: 2px solid #ffb300;
+        }
+
+        .btn-add {
+            background: #ffb300;
+            color: #23272f;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .btn-add:hover {
+            background: #ffa000;
+        }
+
+        .btn-delete {
+            background: #ff5252;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.9em;
+        }
+
+        .btn-delete:hover {
+            background: #ff1744;
+        }
+
+        .empty-list {
+            text-align: center;
+            color: #aaa;
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-layout">
+        <nav class="sidebar">
+            <h2><span class="material-icons">admin_panel_settings</span> Admin Panel</h2>
+            <div class="menu">
+                <a class="menu-btn" href="stats.html"><span class="material-icons">bar_chart</span>Thống kê</a>
+                <a class="menu-btn" href="users.html"><span class="material-icons">group</span>Quản lý người dùng</a>
+                <a class="menu-btn" href="messages.html"><span class="material-icons">forum</span>Quản lý tin nhắn</a>
+                <a class="menu-btn active" href="badwords.html"><span class="material-icons">block</span>Quản lý từ
+                    cấm</a>
+                <a class="menu-btn" href="auditlog.html"><span class="material-icons">history</span>Lịch sử hoạt
+                    động</a>
+            </div>
+            <button class="btn-logout" onclick="handleLogout()"><span class="material-icons">logout</span> Đăng
+                xuất</button>
+        </nav>
+        <main class="main-content">
+            <h1 class="section-title">Quản lý từ cấm</h1>
+            <form class="badword-form" id="badwordForm">
+                <input type="text" id="badwordInput" class="badword-input" placeholder="Nhập từ cấm mới..." required>
+                <button type="submit" class="btn-add"><span class="material-icons">add</span> Thêm</button>
+            </form>
+            <div style="max-height:60vh;overflow-y:auto;background:#23272f;border-radius:12px;">
+                <table style="width:100%;margin-bottom:0;">
+                    <thead>
+                        <tr>
+                            <th style="width:60%">Từ cấm</th>
+                            <th style="width:40%">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="badwordTableBody">
+                        <tr>
+                            <td colspan="2" class="empty-list">Đang tải...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script src="js/common.js"></script>
+    <script>
+        async function fetchBadWords() {
+            try {
+                const token = getCookie('authToken');
+                const res = await fetch('/api/admin/badwords', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Không thể lấy danh sách từ cấm');
+                const words = await res.json();
+                renderBadWords(words);
+            } catch (e) {
+                document.getElementById('badwordTableBody').innerHTML = `<tr><td colspan='2' class='empty-list'>${e.message}</td></tr>`;
+            }
+        }
+        function renderBadWords(words) {
+            const tbody = document.getElementById('badwordTableBody');
+            if (!words.length) {
+                tbody.innerHTML = `<tr><td colspan='2' class='empty-list'>Chưa có từ cấm nào</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = words.map(word => `
+                <tr>
+                    <td>${word.word}</td>
+                    <td>
+                        <button class="btn-delete" onclick="deleteBadWord('${word._id}')">
+                            <span class="material-icons">delete</span> Xóa
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        document.getElementById('badwordForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const input = document.getElementById('badwordInput');
+            const word = input.value.trim();
+            if (!word) return;
+            try {
+                const token = getCookie('authToken');
+                const res = await fetch('/api/admin/badwords', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ word })
+                });
+                if (!res.ok) {
+                    const data = await res.json();
+                    alert(data.message || 'Không thể thêm từ cấm');
+                    return;
+                }
+                input.value = '';
+                fetchBadWords();
+            } catch (e) {
+                alert('Không thể thêm từ cấm');
+            }
+        });
+        async function deleteBadWord(id) {
+            if (!confirm('Bạn có chắc muốn xóa từ này?')) return;
+            try {
+                const token = getCookie('authToken');
+                const res = await fetch(`/api/admin/badwords/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) {
+                    alert('Không thể xóa từ cấm');
+                    return;
+                }
+                fetchBadWords();
+            } catch (e) {
+                alert('Không thể xóa từ cấm');
+            }
+        }
+        fetchBadWords();
+    </script>
+</body>
+
+</html>
