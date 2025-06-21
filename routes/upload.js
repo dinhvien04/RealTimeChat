@@ -29,7 +29,8 @@ router.post('/', auth, upload.single('file'), (req, res) => {
         if (req.file.mimetype.startsWith('image/')) type = 'image';
         if (req.file.mimetype.startsWith('audio/')) type = 'audio';
         res.json({
-            fileUrl: fileUrl,
+            filePath: fileUrl,  // Đổi từ fileUrl thành filePath để consistent
+            fileUrl: fileUrl,   // Giữ cả hai để backward compatibility
             type: type,
             originalName: req.file.originalname,
             serverFileName: req.file.filename

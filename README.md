@@ -75,6 +75,8 @@ A modern real-time chat application built with Node.js, Express, Socket.IO, and 
    GMAIL_USER=youremail@gmail.com           # Your Gmail address used for sending OTP/reset emails
    GMAIL_APP_PASSWORD=your_app_password_here # App Password from Google Account
    FRONTEND_URL=http://localhost:5000        # Base URL for front-end pages (forgot-password, verify-otp, reset-password)
+   GEMINI_API_KEY=your_gemini_api_key_here       # Your Google Generative Language API key
+   # No endpoint override needed; uses Gemini default endpoint
    ```
 4. Start the development server:
    ```bash

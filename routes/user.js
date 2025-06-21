@@ -234,4 +234,22 @@ router.post('/refresh-token', async (req, res) => {
     }
 });
 
+// Search user by username
+router.post('/search', auth, async (req, res) => {
+    try {
+        const { username } = req.body;
+
+        const user = await User.findOne({ username }).select('_id username');
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (error) {
+        console.error('User search error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router; 

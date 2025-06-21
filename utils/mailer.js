@@ -45,9 +45,13 @@ async function sendOtpEmail(toEmail, otp) {
         to: toEmail,
         subject: 'Mã xác thực OTP',
         html: `
-      <p>Chào bạn,</p>
-      <p>Mã OTP của bạn là: <strong>${otp}</strong>.</p>
-      <p>Mã có hiệu lực trong 10 phút.</p>
+      <p style="font-size:16px; color:#333;">Chào bạn,</p>
+      <p style="font-size:14px; color:#333;">Đây là mã xác thực (OTP) của bạn:</p>
+      <div style="background:#f1f1f1; padding:20px; text-align:center; border-radius:8px; margin:20px 0;">
+        <span style="font-size:32px; font-weight:bold; letter-spacing:4px; color:#2c3e50;">${otp}</span>
+      </div>
+      <p style="font-size:12px; color:#666;">Mã có hiệu lực trong 10 phút.</p>
+      <p style="font-size:12px; color:#666;">Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email.</p>
     `
     };
     return transporter.sendMail(mailOptions);
