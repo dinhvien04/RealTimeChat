@@ -6,12 +6,16 @@ const nodemailer = require('nodemailer');
 
 // Create reusable transporter object using SMTP transport (Gmail)
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        // Hardcoded Gmail user for testing
-        user: 'vien.computer.2004@gmail.com',
-        pass: process.env.GMAIL_APP_PASSWORD,
-    },
+  service: 'gmail',
+  auth: {
+    // Hardcoded Gmail user for testing
+    user: 'vien.computer.2004@gmail.com',
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+  // Fix SSL certificate error
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 
 /**
@@ -20,18 +24,18 @@ const transporter = nodemailer.createTransport({
  * @param {string} resetLink - URL for password reset
  */
 async function sendResetPasswordEmail(toEmail, resetLink) {
-    const mailOptions = {
-        from: `"Chat App" <${process.env.GMAIL_USER}>`,
-        to: toEmail,
-        subject: 'Đặt lại mật khẩu',
-        html: `
+  const mailOptions = {
+    from: `"Chat App" <${process.env.GMAIL_USER}>`,
+    to: toEmail,
+    subject: 'Đặt lại mật khẩu',
+    html: `
       <p>Bạn nhận được email này vì bạn (hoặc ai đó) đã yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
       <p>Nhấp vào liên kết bên dưới để đặt lại mật khẩu (hết hạn sau 1 giờ):</p>
       <p><a href="${resetLink}">${resetLink}</a></p>
       <p>Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>
     `,
-    };
-    return transporter.sendMail(mailOptions);
+  };
+  return transporter.sendMail(mailOptions);
 }
 
 /**
@@ -40,11 +44,11 @@ async function sendResetPasswordEmail(toEmail, resetLink) {
  * @param {string} otp - One-time password code
  */
 async function sendOtpEmail(toEmail, otp) {
-    const mailOptions = {
-        from: `"Chat App" <${process.env.GMAIL_USER}>`,
-        to: toEmail,
-        subject: 'Mã xác thực OTP',
-        html: `
+  const mailOptions = {
+    from: `"Chat App" <${process.env.GMAIL_USER}>`,
+    to: toEmail,
+    subject: 'Mã xác thực OTP',
+    html: `
       <p style="font-size:16px; color:#333;">Chào bạn,</p>
       <p style="font-size:14px; color:#333;">Đây là mã xác thực (OTP) của bạn:</p>
       <div style="background:#f1f1f1; padding:20px; text-align:center; border-radius:8px; margin:20px 0;">
@@ -53,11 +57,11 @@ async function sendOtpEmail(toEmail, otp) {
       <p style="font-size:12px; color:#666;">Mã có hiệu lực trong 10 phút.</p>
       <p style="font-size:12px; color:#666;">Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email.</p>
     `
-    };
-    return transporter.sendMail(mailOptions);
+  };
+  return transporter.sendMail(mailOptions);
 }
 
 module.exports = {
-    sendResetPasswordEmail,
-    sendOtpEmail
+  sendResetPasswordEmail,
+  sendOtpEmail
 }; 
